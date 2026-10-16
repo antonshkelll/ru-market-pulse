@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Пульс рынка</title>
+<meta name="description" content="Индекс МосБиржи, гособлигации, юань и акции финансового сектора. Обновляется каждый торговый день.">
+<style>
+  :root {
+    --bg: #fbfbfd; --card: #ffffff; --ink: #1d1d1f; --muted: #6e6e73; --line: #e8e8ed;
+    --up: #248a3d; --down: #d70015; --accent: #0071e3;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #000; --card: #1c1c1e; --ink: #f5f5f7; --muted: #98989d; --line: #2c2c2e;
+            --up: #30d158; --down: #ff453a; --accent: #2997ff; }
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: var(--bg); color: var(--ink); font: 15px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text",
+         "Inter", "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
+  main { max-width: 1080px; margin: 0 auto; padding: 56px 16px 80px; }
+  h1 { font-size: clamp(34px, 6vw, 56px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.05; }
+  .lead { color: var(--muted); font-size: 19px; margin-top: 12px; max-width: 640px; }
+  .updated { color: var(--muted); font-size: 13px; margin-top: 18px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; margin-top: 40px; }
+  .card { background: var(--card); border-radius: 18px; padding: 20px 22px; border: 1px solid var(--line); }
+  .card .t { color: var(--muted); font-size: 13px; }
+  .card .v { font-size: 28px; font-weight: 600; letter-spacing: -0.01em; margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .card .d { font-size: 13px; margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .up { color: var(--up); } .down { color: var(--down); }
+  section { margin-top: 56px; }
+  h2 { font-size: 24px; font-weight: 600; letter-spacing: -0.01em; }
+  .note { color: var(--muted); margin-top: 4px; font-size: 14px; }
+  .chart { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 16px; margin-top: 16px; height: 320px; }
+  footer { color: var(--muted); font-size: 13px; margin-top: 64px; border-top: 1px solid var(--line); padding-top: 20px; }
+  footer a { color: var(--accent); text-decoration: none; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Пульс рынка.</h1>
+  <p class="lead">Индекс МосБиржи, гособлигации, юань и акции финансового сектора. Данные Московской биржи, обновление каждый торговый вечер.</p>
+  <p class="updated" id="updated">Загрузка…</p>
+
+  <div class="grid" id="kpi"></div>
+
+  <section>
+    <h2>Рынок акций и облигаций</h2>
+    <p class="note">RGBI растёт, когда рынок ждёт снижения ключевой ставки.</p>
+    <div class="chart"><canvas id="market"></canvas></div>
+  </section>
+
+  <section>
+    <h2>Финансовый сектор</h2>
+    <p class="note">100 = первая дата на графике.</p>
+    <div class="chart"><canvas id="banks"></canvas></div>
+  </section>
+
+  <section>
+    <h2>Юань к рублю</h2>
+    <div class="chart"><canvas id="cny"></canvas></div>
+  </section>
+
+  <footer>
+    Источник: <a href="https://iss.moex.com">MOEX ISS</a>. Не является инвестиционной рекомендацией.
+    Код: <a href="https://github.com/antonshkelll/ru-market-pulse">github.com/antonshkelll/ru-market-pulse</a>
+  </footer>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const pct = x => x == null ? "—" : (x > 0 ? "+" : x < 0 ? "−" : "") + Math.abs(x * 100).toFixed(1).replace(".", ",") + "%";
+const num = (x, unit) => (x < 1000 ? x.toFixed(2) : Math.round(x).toString()).replace(/\B(?=(\d{3})+(?!\d))/g, " ").replace(".", ",") + (unit && unit !== "п." ? " " + unit : "");
+const COLORS = ["#0071e3", "#bf4800", "#248a3d", "#8e44ad"];
+
+function lineChart(id, datasets) {
+  const xs = datasets.flatMap(d => d.data.map(p => p.x));
+  new Chart(document.getElementById(id), {
+    type: "line",
+    data: { datasets },
+    options: {
+      maintainAspectRatio: false, parsing: false, animation: false,
+      interaction: { mode: "index", intersect: false },
+      elements: { point: { radius: 0 }, line: { borderWidth: 1.8, tension: 0.15 } },
+      scales: {
+        x: { type: "linear", min: Math.min(...xs), max: Math.max(...xs), ticks: { color: css("--muted"), maxTicksLimit: 6,
+             callback: v => new Date(v).toLocaleDateString("ru-RU", { month: "short", year: "2-digit" }) },
+             grid: { display: false } },
+        y: { ticks: { color: css("--muted") }, grid: { color: css("--line") } },
+      },
+      plugins: { legend: { labels: { color: css("--ink"), boxWidth: 12 } },
+                 tooltip: { callbacks: { title: i => new Date(i[0].parsed.x).toLocaleDateString("ru-RU") } } },
+    },
+  });
+}
+
+const points = (s, rebase) => {
+  const base = rebase ? s.close[0] : 1;
+  return s.dates.map((d, i) => ({ x: Date.parse(d), y: rebase ? s.close[i] / base * 100 : s.close[i] }));
+};
+
+fetch("data.json").then(r => r.json()).then(d => {
+  document.getElementById("updated").textContent = "Обновлено " + d.updated;
+  document.getElementById("kpi").innerHTML = d.kpi.map(k => `
+    <div class="card"><div class="t">${k.title}</div><div class="v">${num(k.last, k.unit)}</div>
+    <div class="d ${k.d1 > 0 ? "up" : k.d1 < 0 ? "down" : ""}">${pct(k.d1)} за день · ${pct(k.ytd)} с начала года</div></div>`).join("");
+  const S = d.series;
+  lineChart("market", [
+    S.IMOEX && { label: "IMOEX", data: points(S.IMOEX, true), borderColor: COLORS[0] },
+    S.RGBI && { label: "RGBI", data: points(S.RGBI, true), borderColor: COLORS[2] },
+  ].filter(Boolean));
+  lineChart("banks", ["SBER", "T", "VTBR", "MOEX"].filter(k => S[k]).map((k, i) => (
+    { label: d.kpi.find(x => x.key === k).title, data: points(S[k], true), borderColor: COLORS[i] })));
+  if (S.CNYRUB) lineChart("cny", [{ label: "CNYRUB", data: points(S.CNYRUB, false), borderColor: COLORS[1] }]);
+}).catch(() => { document.getElementById("updated").textContent = "Данные ещё не собраны: дождитесь первого запуска обновления."; });
+</script>
+</body>
+</html>
