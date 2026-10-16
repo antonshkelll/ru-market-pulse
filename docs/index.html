@@ -100,7 +100,7 @@ const points = (s, rebase) => {
 };
 
 fetch("data.json").then(r => r.json()).then(d => {
-  document.getElementById("updated").textContent = "Обновлено " + d.updated;
+  document.getElementById("updated").textContent = "Последние торги " + d.updated + ". Обновляется каждую ночь.";
   document.getElementById("kpi").innerHTML = d.kpi.map(k => `
     <div class="card"><div class="t">${k.title}</div><div class="v">${num(k.last, k.unit)}</div>
     <div class="d ${k.d1 > 0 ? "up" : k.d1 < 0 ? "down" : ""}">${pct(k.d1)} за день · ${pct(k.ytd)} с начала года</div></div>`).join("");

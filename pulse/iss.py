@@ -28,7 +28,7 @@ class Series:
 SERIES = [
     Series("IMOEX", "Индекс МосБиржи", "engines/stock/markets/index/securities/IMOEX", "Рынок", "п."),
     Series("RGBI", "Индекс гособлигаций RGBI", "engines/stock/markets/index/securities/RGBI", "Рынок", "п."),
-    Series("CNYRUB", "Юань, ₽", "engines/currency/markets/selt/boards/CETS/securities/CNYRUB_TOM", "Валюта", "₽"),
+    Series("CNYRUB", "Юань", "engines/currency/markets/selt/boards/CETS/securities/CNYRUB_TOM", "Валюта", "₽"),
     Series("SBER", "Сбербанк", "engines/stock/markets/shares/boards/TQBR/securities/SBER", "Банки", "₽"),
     Series("T", "Т-Технологии", "engines/stock/markets/shares/boards/TQBR/securities/T", "Банки", "₽"),
     Series("VTBR", "ВТБ", "engines/stock/markets/shares/boards/TQBR/securities/VTBR", "Банки", "₽"),

@@ -8,7 +8,6 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import matplotlib
@@ -25,7 +24,6 @@ ROOT = Path(__file__).resolve().parents[1]
 DATA, CHARTS, DOCS = ROOT / "data", ROOT / "charts", ROOT / "docs"
 README = ROOT / "README.md"
 FIRST_DATE = "2024-01-01"
-MSK = timezone(timedelta(hours=3))
 
 INK, MUTED, GRID = "#1d1d1f", "#86868b", "#e8e8ed"
 PALETTE = ["#0071e3", "#bf4800", "#248a3d", "#8e44ad", "#a1a1a6"]
@@ -186,6 +184,9 @@ def main(offline: bool = False) -> int:
             if err:
                 errors.append(err)
                 print("WARN", err, file=sys.stderr)
+    if not offline and len(errors) == len(SERIES):
+        print("Биржа не ответила ни по одному ряду — ничего не обновляем", file=sys.stderr)
+        return 1
     frames = {k: v for k, v in frames.items() if len(v) > 1}
     corporate = {}
     for s in SERIES:
@@ -212,10 +213,11 @@ def main(offline: bool = False) -> int:
     if banks:
         chart_rebased(banks, f"Акции финансового сектора с начала {year.year} года (100 = 1 января)", "banks.png")
 
-    updated = datetime.now(MSK).strftime("%d.%m.%Y %H:%M МСК")
-    last_trade = max(k["date"] for _, k in rows)
+    # в README и на странице — дата последних торгов, а не время сборки: если новых торгов нет,
+    # файлы не меняются и робот ничего не коммитит
+    last_trade = max(frames[s.key].date.max() for s, _ in rows).strftime("%d.%m.%Y")
     body = "\n".join([
-        f"*Обновлено автоматически {updated}, последние торги {last_trade}.*", "",
+        f"*Последние торги: {last_trade}. Обновляется автоматически каждую ночь.*", "",
         render_table(rows), "",
         *([("Цены акций скорректированы на корпоративные события: "
             + "; ".join(f"{t} — {e['kind']} {e['ratio']} ({e['date']})" for t, evs in corporate.items() for e in evs) + "."), ""]
@@ -228,7 +230,7 @@ def main(offline: bool = False) -> int:
     README.write_text(replace_block(README.read_text(encoding="utf-8"), body), encoding="utf-8")
 
     DOCS.mkdir(exist_ok=True)
-    web = dict(updated=updated, kpi=[dict(key=s.key, title=s.title, group=s.group, unit=s.unit, **k) for s, k in rows],
+    web = dict(updated=last_trade, kpi=[dict(key=s.key, title=s.title, group=s.group, unit=s.unit, **k) for s, k in rows],
                series={k: dict(dates=v.date.dt.strftime("%Y-%m-%d").tolist(), close=v.close.round(4).tolist())
                        for k, v in recent.items()})
     (DOCS / "data.json").write_text(json.dumps(web, ensure_ascii=False), encoding="utf-8")

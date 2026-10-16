@@ -102,3 +102,30 @@ def test_no_false_splits_on_normal_moves():
     df = pd.DataFrame({"date": pd.bdate_range("2026-01-05", periods=5), "close": [100.0, 115.0, 92.0, 110.0, 109.0]})
     adj, ev = build.adjust_splits(df)
     assert ev == [] and list(adj.close) == list(df.close)
+
+
+def test_build_fails_when_exchange_is_down(tmp_path, monkeypatch):
+    """Если биржа недоступна, сборка падает и не переписывает README свежей датой."""
+    readme = tmp_path / "README.md"
+    readme.write_text("x\n<!-- PULSE:START -->\nold\n<!-- PULSE:END -->\n", encoding="utf-8")
+    for name, value in (("DATA", tmp_path / "data"), ("CHARTS", tmp_path / "charts"), ("DOCS", tmp_path / "docs"), ("README", readme)):
+        monkeypatch.setattr(build, name, value)
+    monkeypatch.setattr(build, "update", lambda s: (build.load_local(s), f"{s.key}: TimeoutError"))
+    assert build.main(offline=False) == 1
+    assert "old" in readme.read_text(encoding="utf-8")
+
+
+def test_rebuild_without_new_trades_changes_nothing(tmp_path, monkeypatch):
+    readme = tmp_path / "README.md"
+    readme.write_text("x\n<!-- PULSE:START -->\n<!-- PULSE:END -->\n", encoding="utf-8")
+    for name, value in (("DATA", tmp_path / "data"), ("CHARTS", tmp_path / "charts"), ("DOCS", tmp_path / "docs"), ("README", readme)):
+        monkeypatch.setattr(build, name, value)
+    (tmp_path / "data").mkdir()
+    days = pd.bdate_range("2026-01-05", periods=60)
+    for s in SERIES:
+        pd.DataFrame({"date": days, "close": range(100, 160)}).to_csv(tmp_path / "data" / f"{s.key}.csv", index=False)
+    assert build.main(offline=True) == 0
+    first = (readme.read_text(encoding="utf-8"), (tmp_path / "docs" / "data.json").read_text(encoding="utf-8"))
+    assert build.main(offline=True) == 0
+    second = (readme.read_text(encoding="utf-8"), (tmp_path / "docs" / "data.json").read_text(encoding="utf-8"))
+    assert first == second
