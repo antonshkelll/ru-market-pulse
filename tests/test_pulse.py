@@ -79,3 +79,26 @@ def test_first_run_produces_numeric_history(tmp_path, monkeypatch):
     assert (tmp_path / "charts" / "t.png").exists()
     again = build.load_local(SERIES[0])
     assert again.close.dtype.kind == "f" and len(again) == 150
+
+
+def test_split_adjustment():
+    dates = pd.bdate_range("2026-04-01", periods=6)
+    df = pd.DataFrame({"date": dates, "close": [3200.0, 3180.0, 3196.0, 326.3, 330.0, 333.0]})
+    adj, ev = build.adjust_splits(df)
+    assert ev == [{"date": dates[3].strftime("%d.%m.%Y"), "kind": "сплит", "ratio": "10:1"}]
+    assert adj.close.iloc[2] == pytest.approx(319.6)
+    assert (adj.close / adj.close.shift()).dropna().between(0.8, 1.2).all()
+
+
+def test_reverse_split_snaps_to_round_factor():
+    dates = pd.bdate_range("2024-07-10", periods=4)
+    df = pd.DataFrame({"date": dates, "close": [0.019, 0.02, 92.95, 93.5]})
+    adj, ev = build.adjust_splits(df)
+    assert ev[0]["ratio"] == "1:5000" and ev[0]["kind"] == "консолидация"
+    assert adj.close.iloc[1] == pytest.approx(100.0)
+
+
+def test_no_false_splits_on_normal_moves():
+    df = pd.DataFrame({"date": pd.bdate_range("2026-01-05", periods=5), "close": [100.0, 115.0, 92.0, 110.0, 109.0]})
+    adj, ev = build.adjust_splits(df)
+    assert ev == [] and list(adj.close) == list(df.close)

@@ -16,6 +16,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 
 from .iss import SERIES, Series, fetch
@@ -68,6 +69,35 @@ def update(s: Series, get=None) -> tuple[pd.DataFrame, str | None]:
     DATA.mkdir(exist_ok=True)
     df.to_csv(DATA / f"{s.key}.csv", index=False, date_format="%Y-%m-%d")
     return df, None
+
+
+# ---------- сплиты ----------
+NICE_FACTORS = [2, 3, 4, 5, 10, 20, 25, 50, 100, 200, 500, 1000, 2000, 5000, 10000]
+
+
+def adjust_splits(df: pd.DataFrame) -> tuple[pd.DataFrame, list[dict]]:
+    """Корректирует цены акций на сплиты и консолидации.
+
+    Изменение цены больше чем в 3 раза за день на российском рынке невозможно из-за ценовых
+    ограничений биржи — такой скачок означает сплит. Коэффициент округляем до ближайшего
+    «круглого» (10:1, 1:5000 …) и пересчитываем все цены до даты события.
+    """
+    df = df.sort_values("date").reset_index(drop=True)
+    close = df.close.to_numpy(dtype=float).copy()
+    events = []
+    for i in range(1, len(close)):
+        ratio = close[i] / close[i - 1]
+        if 1 / 3 < ratio < 3:
+            continue
+        up = ratio >= 3
+        raw = ratio if up else 1 / ratio
+        factor = min(NICE_FACTORS, key=lambda f: abs(np.log(f / raw)))
+        mult = factor if up else 1 / factor
+        close[:i] *= mult
+        events.append(dict(date=df.date[i].strftime("%d.%m.%Y"),
+                           kind="консолидация" if up else "сплит",
+                           ratio=f"{factor}:1" if not up else f"1:{factor}"))
+    return df.assign(close=close), events
 
 
 # ---------- KPI ----------
@@ -157,6 +187,12 @@ def main(offline: bool = False) -> int:
                 errors.append(err)
                 print("WARN", err, file=sys.stderr)
     frames = {k: v for k, v in frames.items() if len(v) > 1}
+    corporate = {}
+    for s in SERIES:
+        if s.group == "Банки" and s.key in frames:
+            frames[s.key], ev = adjust_splits(frames[s.key])
+            if ev:
+                corporate[s.title] = ev
     if not frames:
         print("Нет ни одного ряда данных", file=sys.stderr)
         return 1
@@ -181,6 +217,9 @@ def main(offline: bool = False) -> int:
     body = "\n".join([
         f"*Обновлено автоматически {updated}, последние торги {last_trade}.*", "",
         render_table(rows), "",
+        *([("Цены акций скорректированы на корпоративные события: "
+            + "; ".join(f"{t} — {e['kind']} {e['ratio']} ({e['date']})" for t, evs in corporate.items() for e in evs) + "."), ""]
+          if corporate else []),
         '<img src="charts/imoex.png" width="100%">', "",
         '<img src="charts/rgbi.png" width="100%">', "",
         '<img src="charts/banks.png" width="100%">', "",
