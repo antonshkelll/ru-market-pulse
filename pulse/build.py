@@ -39,11 +39,17 @@ plt.rcParams.update({
 
 
 # ---------- данные ----------
+def _typed(df: pd.DataFrame) -> pd.DataFrame:
+    """Явные типы: пустая таблица в pandas — это object, и после concat цены стали бы строками."""
+    return pd.DataFrame({"date": pd.to_datetime(df["date"]),
+                         "close": pd.to_numeric(df["close"], errors="coerce").astype(float)})
+
+
 def load_local(s: Series) -> pd.DataFrame:
     f = DATA / f"{s.key}.csv"
     if f.exists():
-        return pd.read_csv(f, parse_dates=["date"])
-    return pd.DataFrame(columns=["date", "close"])
+        return _typed(pd.read_csv(f))
+    return _typed(pd.DataFrame({"date": [], "close": []}))
 
 
 def update(s: Series, get=None) -> tuple[pd.DataFrame, str | None]:
@@ -54,7 +60,11 @@ def update(s: Series, get=None) -> tuple[pd.DataFrame, str | None]:
         new = fetch(s, since) if get is None else fetch(s, since, get=get)
     except Exception as e:  # noqa: BLE001
         return old, f"{s.key}: {type(e).__name__}: {e}"
-    df = pd.concat([old, new]).drop_duplicates("date", keep="last").sort_values("date").reset_index(drop=True)
+    parts = [x for x in (old, _typed(new)) if not x.empty]
+    if not parts:
+        return old, f"{s.key}: биржа вернула пустую историю"
+    df = pd.concat(parts).drop_duplicates("date", keep="last").sort_values("date").reset_index(drop=True)
+    df = _typed(df.dropna())
     DATA.mkdir(exist_ok=True)
     df.to_csv(DATA / f"{s.key}.csv", index=False, date_format="%Y-%m-%d")
     return df, None

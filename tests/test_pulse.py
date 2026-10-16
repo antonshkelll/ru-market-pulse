@@ -65,3 +65,17 @@ def test_update_keeps_old_data_on_network_error(tmp_path, monkeypatch):
         raise TimeoutError("no network")
     df, err = build.update(SERIES[0], get=broken)
     assert len(df) == 1 and "TimeoutError" in err
+
+
+def test_first_run_produces_numeric_history(tmp_path, monkeypatch):
+    """Первый запуск: локальной истории нет. Цены должны остаться числами, а графики — строиться."""
+    monkeypatch.setattr(build, "DATA", tmp_path / "data")
+    monkeypatch.setattr(build, "CHARTS", tmp_path / "charts")
+    get, _ = fake_get_factory(150)
+    df, err = build.update(SERIES[0], get=get)
+    assert err is None and len(df) == 150
+    assert df.close.dtype.kind == "f" and str(df.date.dtype).startswith("datetime64")
+    build.chart_line(df, "test", "t.png")
+    assert (tmp_path / "charts" / "t.png").exists()
+    again = build.load_local(SERIES[0])
+    assert again.close.dtype.kind == "f" and len(again) == 150
