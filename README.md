@@ -1,5 +1,7 @@
 # Пульс рынка
 
+[![CI](https://github.com/antonshkelll/ru-market-pulse/actions/workflows/ci.yml/badge.svg)](https://github.com/antonshkelll/ru-market-pulse/actions/workflows/ci.yml) ![Python](https://img.shields.io/badge/Python-3.12-3776AB) ![License](https://img.shields.io/badge/license-MIT-lightgrey)
+
 Ежедневный срез российского рынка: индекс МосБиржи, гособлигации, юань и акции финансового сектора. Данные приходят из открытого API Московской биржи, а GitHub Actions каждую ночь сам скачивает новые торги, пересчитывает показатели и обновляет этот README и [веб-страницу](https://antonshkelll.github.io/ru-market-pulse/).
 
 Руками здесь ничего не обновляется: таблица и графики ниже собраны роботом.
@@ -79,3 +81,10 @@ pytest -q                      # тесты на поддельном API: па�
 
 - Сплиты и консолидации акций определяются автоматически (скачок цены больше чем в 3 раза за день) и учитываются в расчётах, а в `data/` хранятся сырые цены биржи. Дивиденды не корректируются: в день дивидендного гэпа акция «падает» на размер выплаты.
 - Это наблюдательный дашборд, а не торговая система и не инвестиционная рекомендация.
+
+## Связанные проекты
+
+- [Экономика быстрого платежа](https://github.com/antonshkelll/sbp-economics) — исследование и калькулятор на GitHub Pages
+- [Профиль](https://github.com/antonshkelll/antonshkelll) — где карточка рынка обновляется каждую ночь
+
+Все проекты — в [профиле](https://github.com/antonshkelll).
