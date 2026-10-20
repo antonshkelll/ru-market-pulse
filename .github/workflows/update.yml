@@ -23,8 +23,8 @@ jobs:
       - run: python -m pulse.build
       - name: Commit new data
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "Anton Shkel"
+          git config user.email "236247991+antonshkelll@users.noreply.github.com"
           git add data charts docs/data.json README.md
           if git diff --cached --quiet; then echo "Нового нет"; exit 0; fi
           git commit -m "data: обновление $(date -u +%F)"
