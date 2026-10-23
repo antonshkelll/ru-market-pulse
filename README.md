@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/antonshkelll/ru-market-pulse/actions/workflows/ci.yml/badge.svg)](https://github.com/antonshkelll/ru-market-pulse/actions/workflows/ci.yml) ![Python](https://img.shields.io/badge/Python-3.12-3776AB) ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
-Ежедневный срез российского рынка: индекс МосБиржи, гособлигации, юань и акции финансового сектора. Данные приходят из открытого API Московской биржи, а GitHub Actions каждую ночь сам скачивает новые торги, пересчитывает показатели и обновляет этот README и [веб-страницу](https://antonshkelll.github.io/ru-market-pulse/).
+Ежедневный срез российского рынка: индекс МосБиржи, гособлигации, юань и акции финансового сектора. Данные приходят из открытого API Московской биржи, а GitHub Actions каждую ночь сам скачивает новые торги, пересчитывает показатели и обновляет этот README и [веб-страницу](https://pulse.antonshkel.ru/).
 
 Руками здесь ничего не обновляется: таблица и графики ниже собраны роботом.
 
@@ -75,7 +75,7 @@ pytest -q                      # тесты на поддельном API: па�
 
 1. Fork этого репозитория.
 2. Actions → включить workflows → «Update data» → Run workflow (первый запуск скачает историю с 2024 года).
-3. Settings → Pages → Deploy from a branch → `main` / `docs`, и через минуту страница будет по адресу `https://<ваш-логин>.github.io/ru-market-pulse/`.
+3. Settings → Pages → Deploy from a branch → `main` / `docs`, и через минуту страница будет по адресу `https://<ваш-логин>.github.io/ru-market-pulse/`. Файл `docs/CNAME` с доменом `pulse.antonshkel.ru` в своей копии удалите или впишите свой домен.
 
 ## Ограничения
 
