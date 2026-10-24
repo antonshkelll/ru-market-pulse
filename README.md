@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/antonshkelll/ru-market-pulse/actions/workflows/ci.yml/badge.svg)](https://github.com/antonshkelll/ru-market-pulse/actions/workflows/ci.yml) ![Python](https://img.shields.io/badge/Python-3.12-3776AB) ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
-Ежедневный срез российского рынка: индекс МосБиржи, гособлигации, юань и акции финансового сектора. Данные приходят из открытого API Московской биржи, а GitHub Actions каждую ночь сам скачивает новые торги, пересчитывает показатели и обновляет этот README и [веб-страницу](https://pulse.antonshkel.ru/).
+Ежедневный срез российского рынка: индекс МосБиржи, гособлигации, юань и акции финансового сектора. Данные приходят из открытого API Московской биржи, а GitHub Actions каждую ночь сам скачивает новые торги, пересчитывает показатели и обновляет этот README и [веб-страницу](https://antonshkelll.github.io/ru-market-pulse/).
 
 Таблицу и графики ниже собирает робот, вручную здесь ничего не правится.
 
@@ -64,20 +64,25 @@ MOEX ISS API ──► pulse/iss.py ──► data/*.csv ──► pulse/build.p
 ```bash
 git clone https://github.com/antonshkelll/ru-market-pulse.git
 cd ru-market-pulse
-python3 -m venv .venv && source .venv/bin/activate      # Windows: py -m venv .venv; .venv\Scripts\Activate.ps1
+python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-python -m pulse.build          # скачать данные и пересобрать всё
-python -m pulse.build --offline  # пересобрать из уже скачанных data/*.csv
-pytest -q                      # тесты на поддельном API: пагинация, сбои сети, расчёт KPI
+# скачать данные и пересобрать всё
+python -m pulse.build
+# пересобрать из уже скачанных data/*.csv
+python -m pulse.build --offline
+# тесты на поддельном API: пагинация, сбои сети, расчёт KPI
+pytest -q
 ```
 
-Веб-страницу можно открыть локально: `python -m http.server -d docs 8000` → http://localhost:8000.
+На Windows окружение создаётся и включается командами `py -m venv .venv` и `.venv\Scripts\Activate.ps1` вместо строки с `source`.
+
+Веб-страницу можно открыть локально: запустите `python -m http.server -d docs 8000` и откройте в браузере `localhost:8000`.
 
 ### Свой экземпляр с автообновлением
 
 1. Fork этого репозитория.
 2. Actions → включить workflows → «Update data» → Run workflow (первый запуск скачает историю с 2024 года).
-3. Settings → Pages → Deploy from a branch → `main` / `docs`, и через минуту страница будет по адресу `https://<ваш-логин>.github.io/ru-market-pulse/`. Файл `docs/CNAME` с доменом `pulse.antonshkel.ru` в своей копии удалите или впишите свой домен.
+3. Settings → Pages → Deploy from a branch → `main` / `docs`, и через минуту страница будет по адресу `https://<ваш-логин>.github.io/ru-market-pulse/`.
 
 ## Ограничения
 
@@ -86,7 +91,7 @@ pytest -q                      # тесты на поддельном API: па�
 
 ## Связанные проекты
 
-- [Экономика быстрого платежа](https://github.com/antonshkelll/sbp-economics): исследование и [калькулятор](https://sbp.antonshkel.ru)
+- [Экономика быстрого платежа](https://github.com/antonshkelll/sbp-economics): исследование и [калькулятор](https://antonshkelll.github.io/sbp-economics/)
 - [Профиль](https://github.com/antonshkelll/antonshkelll), где карточка рынка обновляется каждую ночь
 
 Все проекты собраны в [профиле](https://github.com/antonshkelll).
