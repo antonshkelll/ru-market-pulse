@@ -1,3 +1,7 @@
+<picture><source media="(prefers-color-scheme: dark)" srcset="assets/portfolio-dark.svg"><img src="assets/portfolio-light.svg" width="100%" alt="ru-market-pulse"></picture>
+
+[Профиль](https://github.com/antonshkelll) · [Портфолио](https://antonshkel.ru)
+
 # Пульс рынка
 
 [![CI](https://github.com/antonshkelll/ru-market-pulse/actions/workflows/ci.yml/badge.svg)](https://github.com/antonshkelll/ru-market-pulse/actions/workflows/ci.yml) ![Python](https://img.shields.io/badge/Python-3.12-3776AB) ![License](https://img.shields.io/badge/license-MIT-lightgrey)
